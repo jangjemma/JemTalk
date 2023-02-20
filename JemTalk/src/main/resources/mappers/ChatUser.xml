@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.oracle.JemTalk.ChatUser">
+	<select id="loginAction" parameterType="java.lang.String" resultType="ChatUser">
+		select * from chat_user where user_id = #{username}
+	</select>
+	
+	<insert id="signUpAction" parameterType="ChatUser">
+		insert into chat_user values(chat_user_seq.nextval, #{user_name}, #{user_id}, #{password}, #{user_mail}, 'ROLE_USER')
+	</insert>
+	
+</mapper>
+	

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+	<typeAliases>
+		<typeAlias alias="ChatUser"   type="com.oracle.JemTalk.dto.ChatUser"/>
+		<typeAlias alias="ChatRoom"   type="com.oracle.JemTalk.dto.ChatRoom"/>
+		<typeAlias alias="ChatMessage" type="com.oracle.JemTalk.dto.ChatMessage"/>
+		<typeAlias alias="MainPage"   type="com.oracle.JemTalk.dto.MainPageInfo"/>
+		<typeAlias alias="RoomDetail" type="com.oracle.JemTalk.dto.RoomDetail"/>
+		<typeAlias alias="SearchUser" type="com.oracle.JemTalk.dto.SearchUser"/>
+		<typeAlias alias="CreateRoom" type="com.oracle.JemTalk.dto.CreateRoom"/>
+		<typeAlias alias="LeaveRoom" type="com.oracle.JemTalk.dto.LeaveRoom"/>
+	</typeAliases>
+</configuration>

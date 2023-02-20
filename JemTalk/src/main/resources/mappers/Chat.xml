@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.oracle.JemTalk.Chat">
+
+	<resultMap type="ChatRoom" id="chatRoomsList">
+    	<result property="room_num" 	column="room_num"  />
+    	<result property="room_name"  	column="room_name" />
+    	<result property="last_log"  	column="last_log" />
+    	<result property="send_date"    column="send_date" />
+    	<result property="msg_cnt" 		column="msg_cnt"  />
+    </resultMap>
+    
+    <resultMap type="ChatMessage" id="chatMessagesList">
+    	<result property="room_num" 		column="room_num"  />
+    	<result property="log_num"  		column="log_num" />
+    	<result property="user_num"  		column="user_num" />
+    	<result property="user_name" 		column="user_name" />
+    	<result property="msg_content" 		column="msg_content" />
+    	<result property="msg_type" 		column="msg_type"  />
+    	<result property="attach_save_name" column="attach_save_name"  />
+    	<result property="send_date"    	column="send_date" />
+    	<result property="not_read_cnt" 	column="not_read_cnt"  />
+    </resultMap>
+    
+    <resultMap type="ChatUser" id="chatUsersList">
+    	<result property="user_num" column="user_num"  />
+    	<result property="user_name"  column="user_name" />
+    </resultMap>
+	
+	
+	
+	<select id="getMainInfo" parameterType="MainPage" statementType="CALLABLE">
+	        { 
+	             call Main_Page_Proc(
+	                       #{user_num ,mode=IN,    jdbcType=INTEGER}
+	                     , #{chatRooms,   mode=OUT,   jdbcType=CURSOR
+	                     ,   javaType=java.sql.ResultSet 
+	                     ,   resultMap=chatRoomsList}
+	                     , #{chatFriends,   mode=OUT,   jdbcType=CURSOR
+	                     ,   javaType=java.sql.ResultSet 
+	                     ,   resultMap=chatUsersList}
+	                     )
+	        }
+	</select>
+	
+	<select id="EnterRoom" parameterType="RoomDetail" statementType="CALLABLE">
+	        { 
+	             call Enter_Room_Proc(
+	                       #{user_num ,mode=IN,    jdbcType=INTEGER}
+	                     , #{room_num ,mode=IN,    jdbcType=INTEGER}
+	                     , #{last_log ,mode=OUT,   jdbcType=INTEGER}
+	                     , #{LastTwentyMessages,   mode=OUT,   jdbcType=CURSOR
+	                     ,   javaType=java.sql.ResultSet 
+	                     ,   resultMap=chatMessagesList}
+	                     , #{chatMembers,   mode=OUT,   jdbcType=CURSOR
+	                     ,   javaType=java.sql.ResultSet 
+	                     ,   resultMap=chatUsersList}
+	                     )
+	        }
+	</select>
+	
+	<select id="createRoomResult" parameterType="RoomDetail" statementType="CALLABLE">
+	        { 
+	             call Create_Room_Result_Proc(
+	                       #{user_num ,mode=IN,    jdbcType=INTEGER}
+	                     , #{room_num ,mode=IN,    jdbcType=INTEGER}
+	                     , #{LastTwentyMessages,   mode=OUT,   jdbcType=CURSOR
+	                     ,   javaType=java.sql.ResultSet 
+	                     ,   resultMap=chatMessagesList}
+	                     , #{chatMembers,   mode=OUT,   jdbcType=CURSOR
+	                     ,   javaType=java.sql.ResultSet 
+	                     ,   resultMap=chatUsersList}
+	                     )
+	        }
+	</select>
+	
+	<select id="saveMessage" parameterType="ChatMessage" statementType="CALLABLE">
+		 { 
+	             call Save_Msg_Proc(
+	                       #{room_num ,mode=IN,    jdbcType=INTEGER}
+	                     , #{user_num ,mode=IN,     jdbcType=INTEGER}
+	                     , #{msg_content ,mode=IN, jdbcType=VARCHAR}
+	                     , #{msg_type ,mode=IN,    jdbcType=INTEGER}
+	                     , #{attach_save_name ,mode=IN,    jdbcType=VARCHAR}
+	                     , #{send_date ,mode=IN,    jdbcType=DATE}
+	                     , #{log_num ,mode=OUT,   jdbcType=INTEGER}	
+	                     , #{not_read_cnt ,mode=OUT,   jdbcType=INTEGER}
+	                     )
+	     }
+	</select>
+	
+	<insert id="saveRoomInfo" parameterType="ChatMessage">
+		insert all
+		into chat_room values(#{room_num}, #{room_name}, 1)
+		<foreach collection="user_nums" item="item" separator=" ">
+			<choose>
+				<when test="user_num == item">
+					into chat_member values(#{item}, #{room_num}, #{log_num}, 1)
+				</when>
+				<otherwise>
+					into chat_member values(#{item}, #{room_num}, 0, 0)
+				</otherwise>
+			</choose>
+		</foreach>
+		into chat_log values(#{room_num}, #{log_num},#{user_num},#{msg_content},  #{msg_type}, null, #{send_date}, #{not_read_cnt})
+		select * from DUAL
+		<selectKey keyProperty="room_num,log_num" resultType="CreateRoom" order="BEFORE">
+			select chat_room_seq.nextval room_num, chat_log_seq.nextval log_num from dual
+		</selectKey>
+		<!-- <selectKey keyProperty="log_num" resultType="long" order="BEFORE">
+			select chat_log_seq.nextval from dual
+		</selectKey> -->
+	</insert>
+	
+	<select id="findUserList" parameterType="SearchUser" resultType="ChatUser">
+<!-- 		select user_num, user_name
+		from chat_friend cf, chat_user cu
+		where cf.user_num = #{user_num}
+		and	cf.user_num = cu.user_num
+		and cu.user_name like concat('%'.#{searchName , JDBC = nvarchar} , '%') -->
+		
+		select user_num, user_name
+		from chat_user
+		where user_num in (select friend_num
+		                            from chat_friend
+		                            where user_num = #{user_num})
+		<if test="searchName!=null and !searchName.equals('')">
+			and user_name like '%'||#{searchName}|| '%'
+		</if>                         
+	</select>
+	
+	<select id="findFriendList" parameterType="SearchUser" resultType="ChatUser">
+		select user_num, user_name
+		from chat_user
+		where user_num not in (select friend_num
+		                            from chat_friend
+		                            where user_num = #{user_num})
+		and user_num != #{user_num}
+		<if test="searchName!=null and !searchName.equals('')">
+			and user_mail like '%'||#{searchName}|| '%'
+		</if>                         
+	</select>
+	
+	<update id="chatRoomLeave" parameterType="LeaveRoom">
+		update
+		chat_member
+		set connection = 0
+		where user_num = #{user_num}
+		and room_num = #{room_num}
+	</update>
+</mapper>
